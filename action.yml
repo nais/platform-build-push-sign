@@ -82,6 +82,6 @@ runs:
       run: |
         cosign attest --yes --predicate cyclone.sbom.json --type cyclonedx "${{ env.image_ref }}"
 
-  outputs:
-    tag: "${{ fromJSON(steps.metadata.outputs.json).tags[0] }}"
-    version: "${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}"
+outputs:
+  tag: "${{ fromJSON(steps.metadata.outputs.json).tags[0] }}"
+  version: "${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}"
