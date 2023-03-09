@@ -19,6 +19,6 @@ jobs:
           name: deployd
           dockerfile: Dockerfile
           service_account: gh-deploy
-          push: ${{ github.actor != "dependabot[bot]" }}
+          push: ${{ github.actor != 'dependabot[bot]' }}
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
 ```
