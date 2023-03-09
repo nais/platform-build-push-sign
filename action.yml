@@ -25,6 +25,14 @@ inputs:
     description: "The Google Artifact Registry path to push image to"
     default: "europe-north1-docker.pkg.dev/nais-io/nais/images"
 
+outputs:
+  tag: 
+    description: "full image tag"
+    value: "${{ fromJSON(steps.metadata.outputs.json).tags[0] }}"
+  version:
+    description: "version"
+    value: "${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}"
+
 runs:
   using: "composite"
   steps:
@@ -91,7 +99,3 @@ runs:
       shell: bash
       run: |
         cosign attest --yes --predicate cyclone.sbom.json --type cyclonedx "${{ env.image_ref }}"
-
-outputs:
-  tag: "${{ fromJSON(steps.metadata.outputs.json).tags[0] }}"
-  version: "${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}"
