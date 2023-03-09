@@ -15,7 +15,12 @@ inputs:
 
   push:
     description: "wether or not to push image"
-    default: ${{ github.actor != "dependabot[bot]" }}
+    default: true
+
+  workload_identity_provider:
+    description: "the workload identity provider for google service account impersonation"
+    required: true
+
 runs:
   using: "composite"
   env:
@@ -30,7 +35,7 @@ runs:
       name: "Authenticate to Google Cloud"
       uses: "google-github-actions/auth@ef5d53e30bbcd8d0836f4288f5e50ff3e086997d" # ratchet:google-github-actions/auth@v1.0.0
       with:
-        workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+        workload_identity_provider: "${{ inputs.workload_identity_provider }}"
         service_account: "${{ inputs.google_service_account }}@nais-io.iam.gserviceaccount.com"
         token_format: "access_token"
 
