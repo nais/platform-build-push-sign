@@ -28,10 +28,10 @@ inputs:
 outputs:
   tag: 
     description: "full image tag"
-    value: ${{ fromJSON(steps.metadata.outputs.json).tags[0] }}
+    value: ${{ steps.outputs.outputs.tag }}
   version:
     description: "version"
-    value: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}
+    value: ${{ steps.outputs.outputs.version }}
 
 runs:
   using: "composite"
@@ -99,3 +99,10 @@ runs:
       shell: bash
       run: |
         cosign attest --yes --predicate cyclone.sbom.json --type cyclonedx "${{ env.image_ref }}"
+
+    - name: Set outputs
+      id: outputs
+      shell: bash
+      run: |
+        echo "tag=${{ fromJSON(steps.metadata.outputs.json).tags[0] }}" >> $GITHUB_OUTPUT
+        echo "version=${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}" >> $GITHUB_OUTPUT
