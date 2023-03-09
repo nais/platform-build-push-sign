@@ -28,10 +28,10 @@ inputs:
 outputs:
   tag: 
     description: "full image tag"
-    value: "${{ fromJSON(steps.metadata.outputs.json).tags[0] }}"
+    value: ${{ fromJSON(steps.metadata.outputs.json).tags[0] }}
   version:
     description: "version"
-    value: "${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}"
+    value: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}
 
 runs:
   using: "composite"
