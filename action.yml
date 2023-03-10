@@ -25,6 +25,10 @@ inputs:
     description: "The Google Artifact Registry path to push image to"
     default: "europe-north1-docker.pkg.dev/nais-io/nais/images"
 
+  build-args:
+    description: "List of build args"
+    required: false
+
 outputs:
   tag: 
     description: "full image tag"
@@ -74,6 +78,7 @@ runs:
         push: ${{ inputs.push }}
         tags: ${{ steps.metadata.outputs.tags }}
         labels: ${{ steps.metadata.outputs.labels }}
+        build-args: ${{ inputs.args }}
 
     - name: "Save image_ref to env"
       if: inputs.push
