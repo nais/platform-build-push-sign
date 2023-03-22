@@ -40,11 +40,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: "Install cosign"
-      uses: sigstore/cosign-installer@c3667d99424e7e6047999fb6246c0da843953c65 # ratchet:sigstore/cosign-installer@main
-      with:
-        cosign-release: "v2.0.0"
-
     - id: "auth"
       name: "Authenticate to Google Cloud"
       uses: "google-github-actions/auth@ef5d53e30bbcd8d0836f4288f5e50ff3e086997d" # ratchet:google-github-actions/auth@v1.0.0
@@ -80,32 +75,12 @@ runs:
         labels: ${{ steps.metadata.outputs.labels }}
         build-args: ${{ inputs.build_args }}
 
-    - name: "Save image_ref to env"
-      if: inputs.push
-      shell: bash
-      run: echo "image_ref=${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}" >> $GITHUB_ENV
-
-    - name: "Sign image"
-      if: inputs.push
-      shell: bash
-      run: cosign sign --yes "${{ env.image_ref }}"
-
-    - name: Create SBOM
-      if: inputs.push
-      uses: aquasecurity/trivy-action@8bd2f9fbda2109502356ff8a6a89da55b1ead252 # ratchet:aquasecurity/trivy-action@master
+    - name: "Generate SBOM, attest and sign image"
+      uses: nais/attest-sign@v1.0.0
       with:
-        scan-type: "image"
-        format: "cyclonedx"
-        output: "cyclone.sbom.json"
-        image-ref: "${{ env.image_ref }}"
+        image_ref: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
 
-    - name: Attest image
-      if: inputs.push
-      shell: bash
-      run: |
-        cosign attest --yes --predicate cyclone.sbom.json --type cyclonedx "${{ env.image_ref }}"
-
-    - name: Set outputs
+    - name: "Set outputs"
       id: outputs
       shell: bash
       run: |
