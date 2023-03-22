@@ -14,7 +14,7 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # ratchet:actions/checkout@v3
-      - uses: nais/build-push-sign@main
+      - uses: nais/platform-build-push-sign@main
         with:
           name: deployd
           dockerfile: Dockerfile
