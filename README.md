@@ -1,6 +1,6 @@
-# nais build-push-sign action
+# nais platform-build-push-sign action
 
-An action that builds, pushes and signs a docker image
+An action that builds, pushes and signs a docker image. Used primarilly by nais-features
 
 ## Usage
 
