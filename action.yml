@@ -29,6 +29,10 @@ inputs:
     description: "List of build args"
     required: false
 
+  sbom:
+    description: 'existing SBOM in cyclonedx format'
+    default: 'auto-generate-for-me-please.json'
+
 outputs:
   tag: 
     description: "full image tag"
@@ -79,6 +83,7 @@ runs:
       uses: nais/attest-sign@v1.0.0
       with:
         image_ref: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
+        sbom: ${{ inputs.sbom }}
 
     - name: "Set outputs"
       id: outputs
