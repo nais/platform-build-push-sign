@@ -83,6 +83,7 @@ runs:
       uses: nais/salsa-action@main
       with:
         image: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
+        maindir: ./cmd/${{ inputs.name }}
         byosbom: ${{ inputs.sbom }}
         google-service-account: "${{ inputs.google_service_account }}@nais-io.iam.gserviceaccount.com"
 
