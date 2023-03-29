@@ -82,7 +82,7 @@ runs:
     - name: "Generate SBOM, attest and sign image"
       uses: nais/salsa-action@v0.0.3-beta
       with:
-        image_ref: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
+        image: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         byosbom: ${{ inputs.sbom }}
         google-service-account: "${{ inputs.google_service_account }}@nais-io.iam.gserviceaccount.com"
 
