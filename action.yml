@@ -80,7 +80,7 @@ runs:
         build-args: ${{ inputs.build_args }}
 
     - name: "Generate SBOM, attest and sign image"
-      uses: nais/salsa-action@v0.0.3-beta
+      uses: nais/salsa-action@main
       with:
         image: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         byosbom: ${{ inputs.sbom }}
