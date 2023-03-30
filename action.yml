@@ -16,7 +16,6 @@ inputs:
   push:
     description: "Whether or not to push and sign image"
     default: true
-    type: boolean
 
   workload_identity_provider:
     description: "The workload identity provider for google service account impersonation"
