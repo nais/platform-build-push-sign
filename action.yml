@@ -33,8 +33,12 @@ inputs:
     description: 'existing SBOM in cyclonedx format'
     default: 'auto-generate-for-me-please.json'
 
+  extra_tags:
+    description: 'A list of tags to be applied in addtion to the detailed time+sha-tag and latest-tag'
+    default: ''
+
 outputs:
-  tag: 
+  tag:
     description: "full image tag"
     value: ${{ steps.outputs.outputs.tag }}
   version:
@@ -67,7 +71,7 @@ runs:
         tags: |
           type=raw,value={{date 'YYYYMMDD-hhmmss' tz='Europe/Oslo'}}-{{sha}}
           type=raw,value=latest
-
+          type=raw,value=${{inputs.extra_tags}}
     - name: "Build and push"
       id: "build_push"
       uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6 # ratchet:docker/build-push-action@v3
