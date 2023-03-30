@@ -14,8 +14,9 @@ inputs:
     required: true
 
   push:
-    description: "Wether or not to push image"
+    description: "Whether or not to push and sign image"
     default: true
+    type: boolean
 
   workload_identity_provider:
     description: "The workload identity provider for google service account impersonation"
@@ -85,6 +86,7 @@ runs:
 
     - name: "Generate SBOM, attest and sign image"
       uses: nais/attest-sign@v1.0.0
+      if: ${{ inputs.push }}
       with:
         image_ref: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         sbom: ${{ inputs.sbom }}
