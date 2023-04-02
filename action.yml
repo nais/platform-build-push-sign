@@ -90,19 +90,13 @@ runs:
         labels: ${{ steps.metadata.outputs.labels }}
         build-args: ${{ inputs.build_args }}
 
-    - name: Set Go Main dir
-      if: ${{ inputs.go-maindir == '' }}
-      shell: bash
-      run: |
-        echo "GOMAINDIR=./cmd/{{ inputs.name }}" >> $GITHUB_ENV
-
     - name: "Generate SBOM, attest and sign image"
       uses: nais/salsa-action@main
       id: "salsa"
       with:
         image: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
-        maindir: ${{ env.GOMAINDIR }}
-        byosbom: ${{ inputs.sbom }}
+        go-main-dir: ./cmd/{{ inputs.name }}
+        byo-sbom: ${{ inputs.sbom }}
         context: ${{ inputs.context }}
         google-service-account: "${{ inputs.google_service_account }}@nais-io.iam.gserviceaccount.com"
 
