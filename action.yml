@@ -72,6 +72,7 @@ runs:
           type=raw,value={{date 'YYYYMMDD-hhmmss' tz='Europe/Oslo'}}-{{sha}}
           type=raw,value=latest
           type=raw,value=${{inputs.extra_tags}}
+          
     - name: "Build and push"
       id: "build_push"
       uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6 # ratchet:docker/build-push-action@v3
@@ -82,6 +83,8 @@ runs:
         tags: ${{ steps.metadata.outputs.tags }}
         labels: ${{ steps.metadata.outputs.labels }}
         build-args: ${{ inputs.build_args }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: "Generate SBOM, attest and sign image"
       if: ${{ inputs.push == 'true' }}
