@@ -93,7 +93,7 @@ runs:
         image: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         byo-sbom: ${{ inputs.sbom }}
         build-context: ${{ inputs.salsa_context }}
-        go-main-dir: /cmd/${{ inputs.name }}
+        go-main-dir: ./cmd/${{ inputs.name }}
         google-service-account: "${{ inputs.google_service_account }}@nais-io.iam.gserviceaccount.com"
 
     ##- name: "Generate SBOM, attest and sign image"
