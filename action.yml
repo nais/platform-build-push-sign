@@ -95,7 +95,7 @@ runs:
       id: "salsa"
       with:
         image: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
-        go-main-dir: ./cmd/{{ inputs.name }}
+        go-main-dir: ./cmd/${{ inputs.name }}
         byo-sbom: ${{ inputs.sbom }}
         context: ${{ inputs.context }}
         google-service-account: "${{ inputs.google_service_account }}@nais-io.iam.gserviceaccount.com"
