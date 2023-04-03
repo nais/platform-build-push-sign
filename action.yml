@@ -33,12 +33,8 @@ inputs:
     description: 'existing SBOM in cyclonedx format'
     default: ''
 
-  go-maindir:
-    description: 'main directory for go projects'
-    default: '.'
-
   context:
-    description: 'context for docker build'
+    description: 'the context of project to build from sbom from'
     default: '.'
 
 outputs:
@@ -95,7 +91,6 @@ runs:
       id: "salsa"
       with:
         image: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
-        go-main-dir: ./cmd/${{ inputs.name }}
         byo-sbom: ${{ inputs.sbom }}
         context: ${{ inputs.context }}
         google-service-account: "${{ inputs.google_service_account }}@nais-io.iam.gserviceaccount.com"
