@@ -30,12 +30,14 @@ inputs:
     required: false
 
   sbom:
-    description: 'existing SBOM in cyclonedx format'
+    description: 'provide existing sbom with cyclonedx predicate in json format'
     default: ''
+    required: false
 
   salsa_context:
-    description: 'the context of project to build from sbom from'
+    description: 'the context/root of project to build sbom from'
     default: '.'
+    required: false
 
 outputs:
   tag:
@@ -95,12 +97,6 @@ runs:
         build-context: ${{ inputs.salsa_context }}
         go-main-dir: ./cmd/${{ inputs.name }}
         google-service-account: "${{ inputs.google_service_account }}@nais-io.iam.gserviceaccount.com"
-
-    ##- name: "Generate SBOM, attest and sign image"
-    ##  uses: nais/attest-sign@v1.0.0
-    ##  with:
-    ##    image_ref: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
-    ##    sbom: ${{ inputs.sbom }}
 
     - name: "Set outputs"
       id: outputs
