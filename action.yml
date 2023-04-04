@@ -50,9 +50,6 @@ outputs:
   version:
     description: "version"
     value: ${{ steps.outputs.outputs.version }}
-  salsa:
-    description: "generated salsa sbom path"
-    value: ${{ steps.outputs.outputs.salsa }}
 
 runs:
   using: "composite"
@@ -94,7 +91,6 @@ runs:
 
     - name: "Generate SBOM, attest and sign image"
       uses: nais/salsa-action@main
-      id: "salsa"
       with:
         image: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         byo-sbom: ${{ inputs.sbom }}
@@ -108,4 +104,3 @@ runs:
       run: |
         echo "tag=${{ fromJSON(steps.metadata.outputs.json).tags[0] }}" >> $GITHUB_OUTPUT
         echo "version=${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}" >> $GITHUB_OUTPUT
-        echo "salsa=${{ steps.salsa.outputs.sbom }}" >> $GITHUB_OUTPUT
