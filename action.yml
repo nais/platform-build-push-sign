@@ -50,6 +50,7 @@ runs:
   steps:
     - id: "auth"
       name: "Authenticate to Google Cloud"
+      if: ${{ inputs.push == 'true' }}
       uses: "google-github-actions/auth@ef5d53e30bbcd8d0836f4288f5e50ff3e086997d" # ratchet:google-github-actions/auth@v1.0.0
       with:
         workload_identity_provider: "${{ inputs.workload_identity_provider }}"
@@ -57,6 +58,7 @@ runs:
         token_format: "access_token"
 
     - name: "Login to registry"
+      if: ${{ inputs.push == 'true' }}
       uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # ratchet:docker/login-action@v2
       with:
         registry: "${{ inputs.registry }}"
