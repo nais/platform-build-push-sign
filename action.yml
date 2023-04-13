@@ -39,6 +39,11 @@ inputs:
     default: '.'
     required: false
 
+  go_main_dir:
+    description: 'the main directory for go if the project have multiple go modules'
+    default: ''
+    required: false
+
   extra_tags:
     description: 'A list of tags to be applied in addtion to the detailed time+sha-tag and latest-tag'
     default: ''
@@ -95,7 +100,7 @@ runs:
         image: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         byo-sbom: ${{ inputs.sbom }}
         build-context: ${{ inputs.salsa_context }}
-        go-main-dir: ./cmd/${{ inputs.name }}
+        go-main-dir: ${{ inputs.go_main_dir }}
         google-service-account: "${{ inputs.google_service_account }}@nais-io.iam.gserviceaccount.com"
 
     - name: "Set outputs"
