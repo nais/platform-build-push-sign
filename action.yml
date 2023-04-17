@@ -84,7 +84,7 @@ runs:
         tags: ${{ steps.metadata.outputs.tags }}
         labels: |
             ${{ steps.metadata.outputs.labels }}
-            org.opencontainers.image.workflow.ref="$GITHUB_WORKFLOW_REF"
+            org.opencontainers.image.workflow.ref=${{ github.workflow.ref }}
         build-args: ${{ inputs.build_args }}
 
     - name: "Generate SBOM, attest and sign image"
