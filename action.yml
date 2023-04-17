@@ -82,7 +82,7 @@ runs:
         file: "${{ inputs.dockerfile }}"
         push: ${{ inputs.push }}
         tags: ${{ steps.metadata.outputs.tags }}
-        labels: ${{ steps.metadata.outputs.labels }}
+        labels: ${{ steps.metadata.outputs.labels }},org.opencontainers.image.workflow.ref=${{ GITHUB_WORKFLOW_REF }}
         build-args: ${{ inputs.build_args }}
 
     - name: "Generate SBOM, attest and sign image"
