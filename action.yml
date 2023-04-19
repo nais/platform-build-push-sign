@@ -34,8 +34,12 @@ inputs:
     default: 'auto-generate-for-me-please.json'
 
   extra_tags:
-    description: 'A list of tags to be applied in addtion to the detailed time+sha-tag and latest-tag'
+    description: 'A list of tags to be applied in addition to the detailed time+sha-tag and latest-tag'
     default: ''
+
+  multi-platform:
+    description: "Build multi-platform images, supporting amd64 and arm64"
+    default: "false"
 
 outputs:
   tag:
@@ -49,6 +53,7 @@ runs:
   using: "composite"
   steps:
     - name: Set up QEMU
+      if: "${{ inputs.multi-platform == 'true' }}"
       uses: docker/setup-qemu-action@v2
 
     - name: Set up Docker Buildx
@@ -78,12 +83,23 @@ runs:
           type=raw,value={{date 'YYYYMMDD-hhmmss' tz='Europe/Oslo'}}-{{sha}}
           type=raw,value=latest
           type=raw,value=${{inputs.extra_tags}}
+
+    - name: "Select platforms"
+      id: multi-platform
+      shell: bash
+      run: |
+        if [[ "${{ inputs.multi-platform }}" == 'true' ]]; then
+          echo "platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
+        else
+          echo "platforms=linux/amd64" >> $GITHUB_OUTPUT
+        fi
+
     - name: "Build and push"
       id: "build_push"
       uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6 # ratchet:docker/build-push-action@v3
       with:
         context: .
-        platforms: linux/amd64,linux/arm64
+        platforms: "${{ steps.multi-platform.outputs.platforms }}"
         file: "${{ inputs.dockerfile }}"
         push: ${{ inputs.push }}
         tags: ${{ steps.metadata.outputs.tags }}
