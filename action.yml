@@ -109,6 +109,7 @@ runs:
         build-args: ${{ inputs.build_args }}
 
     - name: Write summary
+      shell: bash
       run: |
         echo '### metadata tags' >> $GITHUB_STEP_SUMMARY
         echo '${{ steps.metadata.outputs.tags }}' >> $GITHUB_STEP_SUMMARY
