@@ -111,10 +111,8 @@ runs:
     - name: Write summary
       shell: bash
       run: |
-        echo '### metadata tags' >> $GITHUB_STEP_SUMMARY
+        echo '### tags' >> $GITHUB_STEP_SUMMARY
         echo '${{ steps.metadata.outputs.tags }}' >> $GITHUB_STEP_SUMMARY
-        echo '### build metadata' >> $GITHUB_STEP_SUMMARY
-        echo '${{ steps.build_push.outputs.metadata }}' >> $GITHUB_STEP_SUMMARY
 
     - name: "Generate SBOM, attest and sign image"
       if: ${{ inputs.push == 'true' }}
