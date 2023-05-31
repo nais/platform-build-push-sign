@@ -29,13 +29,17 @@ inputs:
     description: "List of build args"
     required: false
 
+  build_secrets:
+    description: "List of secrets"
+    required: false
+
   sbom:
-    description: 'existing SBOM in cyclonedx format'
-    default: 'auto-generate-for-me-please.json'
+    description: "existing SBOM in cyclonedx format"
+    default: "auto-generate-for-me-please.json"
 
   extra_tags:
-    description: 'A list of tags to be applied in addition to the detailed time+sha-tag and latest-tag'
-    default: ''
+    description: "A list of tags to be applied in addition to the detailed time+sha-tag and latest-tag"
+    default: ""
 
   multi-platform:
     description: "Build multi-platform images, supporting amd64 and arm64"
@@ -107,6 +111,7 @@ runs:
         tags: ${{ steps.metadata.outputs.tags }}
         labels: ${{ steps.metadata.outputs.labels }}
         build-args: ${{ inputs.build_args }}
+        secrets: ${{ inputs.build_secrets }}
 
     - name: Write summary
       shell: bash
