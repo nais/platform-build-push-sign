@@ -113,7 +113,7 @@ runs:
         echo '${{ steps.metadata.outputs.tags }}' >> $GITHUB_STEP_SUMMARY
     - name: "Generate SBOM, attest and sign image"
       if: ${{ inputs.push == 'true' }}
-      uses: nais/attest-sign@v1.0.1
+      uses: nais/attest-sign@v1.1.0
       with:
         image_ref: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         sbom: ${{ inputs.sbom }}
