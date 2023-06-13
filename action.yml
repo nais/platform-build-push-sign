@@ -37,6 +37,9 @@ inputs:
   multi-platform:
     description: "Build multi-platform images, supporting amd64 and arm64"
     default: "false"
+  context:
+    description: "Docker build context"
+    default: "."
 outputs:
   tag:
     description: "full image tag"
@@ -98,7 +101,7 @@ runs:
       id: "build_push"
       uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # ratchet:docker/build-push-action@v4
       with:
-        context: .
+        context: "${{ inputs.context }}"
         platforms: "${{ steps.multi-platform.outputs.platforms }}"
         file: "${{ inputs.dockerfile }}"
         push: ${{ inputs.push }}
