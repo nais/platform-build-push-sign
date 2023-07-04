@@ -120,6 +120,12 @@ runs:
       with:
         image_ref: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         sbom: ${{ inputs.sbom }}
+    - name: "Generate SBOM, attest and sign image (GHCR)"
+      if: ${{ inputs.push_ghcr == 'true' }}
+      uses: nais/attest-sign@v1.1.0
+      with:
+        image_ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
+        sbom: ${{ inputs.sbom }}
     - name: "Set outputs"
       id: outputs
       shell: bash
