@@ -1,7 +1,7 @@
 # nais platform-build-push-sign action
 
 An action that builds, pushes and signs a docker image. Used primarily by nais-features.
-By default images get a tag on the format: `{{date 'YYYYMMDD-hhmmss' tz='Europe/Oslo'}}-{{sha}}` and another tag `latest`.
+By default images get a tag on the format: `{{date 'YYYY-MM-DD-HHmmss' tz='Europe/Oslo'}}-{{sha}}` and another tag `latest`.
 If you need additional tags you can, optionally, use the extra_tags field.
 
 ## Usage
