@@ -12,10 +12,10 @@ inputs:
     required: true
   push:
     description: "Whether or not to push image"
-    default: true
+    default: "true"
   push_ghcr:
     description: "Whether or not to push image to GHCR"
-    default: false
+    default: "false"
   workload_identity_provider:
     description: "The workload identity provider for google service account impersonation"
     required: true
@@ -40,6 +40,12 @@ inputs:
   context:
     description: "Docker build context"
     default: "."
+  cache_from:
+    description: "cache-from sent to docker/build-push-action"
+    required: false
+  cache_to:
+    description: "cache-to sent to docker/build-push-action"
+    required: false
 outputs:
   tag:
     description: "full image tag"
@@ -109,6 +115,8 @@ runs:
         labels: ${{ steps.metadata.outputs.labels }}
         build-args: ${{ inputs.build_args }}
         secrets: ${{ inputs.build_secrets }}
+        cache-from: ${{ inputs.cache_from }}
+        cache-to: ${{ inputs.cache_to }}
     - name: Write summary
       shell: bash
       run: |
