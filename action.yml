@@ -1,5 +1,5 @@
 name: "GAR build/push/sign"
-description: "Build, push, and sign (to Google Artifact Registry)"
+description: "Build, push, and sign (to Google Artifact Registry and optionally to GHCR)"
 inputs:
   dockerfile:
     description: "Dockerfile path"
@@ -11,8 +11,11 @@ inputs:
     description: "Name of google service account to impersonate"
     required: true
   push:
-    description: "Wether or not to push image"
-    default: true
+    description: "Whether or not to push image"
+    default: "true"
+  push_ghcr:
+    description: "Whether or not to push image to GHCR"
+    default: "false"
   workload_identity_provider:
     description: "The workload identity provider for google service account impersonation"
     required: true
@@ -34,6 +37,15 @@ inputs:
   multi-platform:
     description: "Build multi-platform images, supporting amd64 and arm64"
     default: "false"
+  context:
+    description: "Docker build context"
+    default: "."
+  cache_from:
+    description: "cache-from sent to docker/build-push-action"
+    required: false
+  cache_to:
+    description: "cache-to sent to docker/build-push-action"
+    required: false
 outputs:
   tag:
     description: "full image tag"
@@ -64,13 +76,22 @@ runs:
         registry: "${{ inputs.registry }}"
         username: "oauth2accesstoken"
         password: "${{ steps.auth.outputs.access_token }}"
+    - name: "Login to GitHub Container Registry"
+      uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # ratchet:docker/login-action@v2
+      if: ${{ inputs.push_ghcr == 'true' }}
+      with:
+        registry: "ghcr.io"
+        username: ${{ github.repository_owner }}
+        password: ${{ github.token }}
     - name: "Docker metadata"
       id: "metadata"
       uses: docker/metadata-action@c4ee3adeed93b1fa6a762f209fb01608c1a22f1e # ratchet:docker/metadata-action@v4
       with:
-        images: "${{ inputs.registry }}/${{ inputs.name }}"
+        images: |
+          "${{ inputs.registry }}/${{ inputs.name }}"
+          name=ghcr.io/${{ github.repository_owner }}/${{ inputs.name }},enable=${{ inputs.push_ghcr == 'true' }}
         tags: |
-          type=raw,value={{date 'YYYYMMDD-hhmmss' tz='Europe/Oslo'}}-{{sha}}
+          type=raw,value={{date 'YYYY-MM-DD-HHmmss' tz='Europe/Oslo'}}-{{sha}}
           type=raw,value=latest
           type=raw,value=${{inputs.extra_tags}}
           
@@ -87,7 +108,7 @@ runs:
       id: "build_push"
       uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # ratchet:docker/build-push-action@v4
       with:
-        context: .
+        context: "${{ inputs.context }}"
         platforms: "${{ steps.multi-platform.outputs.platforms }}"
         file: "${{ inputs.dockerfile }}"
         push: ${{ inputs.push }}
@@ -98,6 +119,8 @@ runs:
         cache-to: type=gha,mode=max
 
         secrets: ${{ inputs.build_secrets }}
+        cache-from: ${{ inputs.cache_from }}
+        cache-to: ${{ inputs.cache_to }}
     - name: Write summary
       shell: bash
       run: |
@@ -105,9 +128,15 @@ runs:
         echo '${{ steps.metadata.outputs.tags }}' >> $GITHUB_STEP_SUMMARY
     - name: "Generate SBOM, attest and sign image"
       if: ${{ inputs.push == 'true' }}
-      uses: nais/attest-sign@v1.0.1
+      uses: nais/attest-sign@v1.1.0
       with:
         image_ref: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
+        sbom: ${{ inputs.sbom }}
+    - name: "Generate SBOM, attest and sign image (GHCR)"
+      if: ${{ inputs.push_ghcr == 'true' }}
+      uses: nais/attest-sign@v1.1.0
+      with:
+        image_ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         sbom: ${{ inputs.sbom }}
     - name: "Set outputs"
       id: outputs
