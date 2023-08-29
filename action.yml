@@ -9,7 +9,7 @@ inputs:
     required: true
   google_service_account:
     description: "Name of google service account to impersonate"
-    required: true
+    required: ${{ inputs.push == 'true' }}
   push:
     description: "Whether or not to push image"
     default: "true"
@@ -18,7 +18,7 @@ inputs:
     default: "false"
   workload_identity_provider:
     description: "The workload identity provider for google service account impersonation"
-    required: true
+    required: ${{ inputs.push == 'true' }}
   registry:
     description: "The Google Artifact Registry path to push image to"
     default: "europe-north1-docker.pkg.dev/nais-io/nais/images"
