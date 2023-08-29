@@ -9,7 +9,7 @@ inputs:
     required: true
   google_service_account:
     description: "Name of google service account to impersonate"
-    required: ${{ inputs.push == 'true' }}
+    required: false
   push:
     description: "Whether or not to push image"
     default: "true"
@@ -18,7 +18,7 @@ inputs:
     default: "false"
   workload_identity_provider:
     description: "The workload identity provider for google service account impersonation"
-    required: ${{ inputs.push == 'true' }}
+    required: false
   registry:
     description: "The Google Artifact Registry path to push image to"
     default: "europe-north1-docker.pkg.dev/nais-io/nais/images"
@@ -56,6 +56,20 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Check inputs
+      shell: bash
+      run: |
+        if [[ "${{ inputs.push }}" == "true" ]]; then
+          if [[ "${{ inputs.workload_identity_provider }}" == "" ]]; then
+            echo "Input workload_identity_provider is required when push is set to true."
+            exit 1
+          fi
+          if [[ "${{ inputs.google_service_account }}" == "" ]]; then
+            echo "Input google_service_account is required when push is set to true."
+            exit 1
+          fi
+        fi
+
     - name: Set up QEMU
       if: "${{ inputs.multi-platform == 'true' }}"
       uses: docker/setup-qemu-action@e81a89b1732b9c48d79cd809d8d81d79c4647a18 # ratchet:docker/setup-qemu-action@v2
