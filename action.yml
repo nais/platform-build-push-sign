@@ -85,13 +85,13 @@ runs:
         token_format: "access_token"
     - name: "Login to registry"
       if: ${{ inputs.push == 'true' }}
-      uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # ratchet:docker/login-action@v2
+      uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # ratchet:docker/login-action@v2
       with:
         registry: "${{ inputs.registry }}"
         username: "oauth2accesstoken"
         password: "${{ steps.auth.outputs.access_token }}"
     - name: "Login to GitHub Container Registry"
-      uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # ratchet:docker/login-action@v2
+      uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # ratchet:docker/login-action@v2
       if: ${{ inputs.push_ghcr == 'true' }}
       with:
         registry: "ghcr.io"
