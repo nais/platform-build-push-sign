@@ -125,7 +125,7 @@ runs:
       id: cache-dance
       shell: bash
       run: |
-        if grep -qE 'RUN\s+--mount=type=scache' "${{ inputs.dockerfile }}"; then
+        if grep -qE 'RUN\s+--mount=type=cache' "${{ inputs.dockerfile }}"; then
           echo "buildkit_cache_dance=true" >> $GITHUB_OUTPUT
         else
           echo "buildkit_cache_dance=false" >> $GITHUB_OUTPUT
