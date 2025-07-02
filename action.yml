@@ -133,7 +133,7 @@ runs:
     - name: Cache
       uses: actions/cache@v4
       if: ${{ steps.cache-dance.outputs.buildkit_cache_dance == 'true' }}
-      id: cache-dance
+      id: cache-dance-cache
       with:
         path: cache-mount
         key: cache-mount-${{ hashFiles(inputs.dockerfile) }}
@@ -144,7 +144,7 @@ runs:
         builder: ${{ steps.setup-buildx.outputs.name }}
         cache-dir: cache-mount
         dockerfile: ${{ inputs.dockerfile }}
-        skip-extraction: ${{ steps.cache-dance.outputs.cache-hit }}
+        skip-extraction: ${{ steps.cache-dance-cache.outputs.cache-hit }}
     - name: "Build and push"
       id: "build_push"
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # ratchet:docker/build-push-action@v5
