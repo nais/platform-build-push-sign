@@ -76,6 +76,7 @@ runs:
       if: "${{ inputs.multi-platform == 'true' }}"
       uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # ratchet:docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
+      id: setup-buildx
       uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # ratchet:docker/setup-buildx-action@v3
     - id: "auth"
       name: "Authenticate to Google Cloud"
@@ -119,6 +120,31 @@ runs:
         else
           echo "platforms=linux/amd64" >> $GITHUB_OUTPUT
         fi
+    - name: "Check if Dockerfile contains cache dance"
+      # If Dockerfile contains `RUN --mount=type=cache`, we enable cache dance
+      id: cache-dance
+      shell: bash
+      run: |
+        if grep -qE 'RUN\s+--mount=type=scache' "${{ inputs.dockerfile }}"; then
+          echo "buildkit_cache_dance=true" >> $GITHUB_OUTPUT
+        else
+          echo "buildkit_cache_dance=false" >> $GITHUB_OUTPUT
+        fi
+    - name: Cache
+      uses: actions/cache@v4
+      if: ${{ steps.cache-dance.outputs.buildkit_cache_dance == 'true' }}
+      id: cache-dance
+      with:
+        path: cache-mount
+        key: cache-mount-${{ hashFiles(inputs.dockerfile) }}
+    - name: Restore Docker cache mounts
+      uses: reproducible-containers/buildkit-cache-dance@v3
+      if: ${{ steps.cache-dance.outputs.buildkit_cache_dance == 'true' }}
+      with:
+        builder: ${{ steps.setup-buildx.outputs.name }}
+        cache-dir: cache-mount
+        dockerfile: ${{ inputs.dockerfile }}
+        skip-extraction: ${{ steps.cache-dance.outputs.cache-hit }}
     - name: "Build and push"
       id: "build_push"
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # ratchet:docker/build-push-action@v5
