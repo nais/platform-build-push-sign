@@ -101,7 +101,7 @@ runs:
         password: ${{ github.token }}
     - name: "Docker metadata"
       id: "metadata"
-      uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # ratchet:docker/metadata-action@v5
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # ratchet:docker/metadata-action@v5
       with:
         images: |
           "${{ inputs.registry }}/${{ inputs.name }}"
