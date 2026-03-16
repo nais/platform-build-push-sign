@@ -9,7 +9,7 @@ inputs:
     required: true
   google_service_account:
     description: "Name of google service account to impersonate"
-    required: true
+    required: false
   push:
     description: "Whether or not to push image"
     default: "true"
@@ -18,7 +18,7 @@ inputs:
     default: "false"
   workload_identity_provider:
     description: "The workload identity provider for google service account impersonation"
-    required: true
+    required: false
   registry:
     description: "The Google Artifact Registry path to push image to"
     default: "europe-north1-docker.pkg.dev/nais-io/nais/images"
@@ -46,6 +46,9 @@ inputs:
   cache_to:
     description: "cache-to sent to docker/build-push-action"
     required: false
+  target:
+    description: "docker target"
+    required: false
 outputs:
   tag:
     description: "full image tag"
@@ -56,28 +59,41 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Check inputs
+      shell: bash
+      run: |
+        if [[ "${{ inputs.push }}" == "true" ]]; then
+          if [[ "${{ inputs.workload_identity_provider }}" == "" ]]; then
+            echo "Input workload_identity_provider is required when push is set to true."
+            exit 1
+          fi
+          if [[ "${{ inputs.google_service_account }}" == "" ]]; then
+            echo "Input google_service_account is required when push is set to true."
+            exit 1
+          fi
+        fi
     - name: Set up QEMU
       if: "${{ inputs.multi-platform == 'true' }}"
-      uses: docker/setup-qemu-action@e81a89b1732b9c48d79cd809d8d81d79c4647a18 # ratchet:docker/setup-qemu-action@v2
+      uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # ratchet:docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@4b4e9c3e2d4531116a6f8ba8e71fc6e2cb6e6c8c # ratchet:docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # ratchet:docker/setup-buildx-action@v3
     - id: "auth"
       name: "Authenticate to Google Cloud"
       if: ${{ inputs.push == 'true' }}
-      uses: "google-github-actions/auth@35b0e87d162680511bf346c299f71c9c5c379033" # ratchet:google-github-actions/auth@v1.1.1
+      uses: "google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093" # ratchet:google-github-actions/auth@v3
       with:
         workload_identity_provider: "${{ inputs.workload_identity_provider }}"
         service_account: "${{ inputs.google_service_account }}@nais-io.iam.gserviceaccount.com"
         token_format: "access_token"
     - name: "Login to registry"
       if: ${{ inputs.push == 'true' }}
-      uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # ratchet:docker/login-action@v2
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # ratchet:docker/login-action@v3
       with:
         registry: "${{ inputs.registry }}"
         username: "oauth2accesstoken"
         password: "${{ steps.auth.outputs.access_token }}"
     - name: "Login to GitHub Container Registry"
-      uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # ratchet:docker/login-action@v2
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # ratchet:docker/login-action@v3
       if: ${{ inputs.push_ghcr == 'true' }}
       with:
         registry: "ghcr.io"
@@ -85,7 +101,7 @@ runs:
         password: ${{ github.token }}
     - name: "Docker metadata"
       id: "metadata"
-      uses: docker/metadata-action@c4ee3adeed93b1fa6a762f209fb01608c1a22f1e # ratchet:docker/metadata-action@v4
+      uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # ratchet:docker/metadata-action@v5
       with:
         images: |
           "${{ inputs.registry }}/${{ inputs.name }}"
@@ -106,7 +122,7 @@ runs:
         fi
     - name: "Build and push"
       id: "build_push"
-      uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # ratchet:docker/build-push-action@v4
+      uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # ratchet:docker/build-push-action@v5
       with:
         context: "${{ inputs.context }}"
         platforms: "${{ steps.multi-platform.outputs.platforms }}"
@@ -121,6 +137,7 @@ runs:
         secrets: ${{ inputs.build_secrets }}
         cache-from: ${{ inputs.cache_from }}
         cache-to: ${{ inputs.cache_to }}
+        target: ${{ inputs.target }}
     - name: Write summary
       shell: bash
       run: |
@@ -128,13 +145,13 @@ runs:
         echo '${{ steps.metadata.outputs.tags }}' >> $GITHUB_STEP_SUMMARY
     - name: "Generate SBOM, attest and sign image"
       if: ${{ inputs.push == 'true' }}
-      uses: nais/attest-sign@v1.1.0
+      uses: nais/attest-sign@v2 # ratchet:exclude
       with:
         image_ref: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         sbom: ${{ inputs.sbom }}
     - name: "Generate SBOM, attest and sign image (GHCR)"
       if: ${{ inputs.push_ghcr == 'true' }}
-      uses: nais/attest-sign@v1.1.0
+      uses: nais/attest-sign@v2 # ratchet:exclude
       with:
         image_ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         sbom: ${{ inputs.sbom }}
