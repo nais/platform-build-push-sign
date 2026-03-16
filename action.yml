@@ -110,6 +110,7 @@ runs:
           type=raw,value={{date 'YYYY-MM-DD-HHmmss' tz='Europe/Oslo'}}-{{sha}}
           type=raw,value=latest
           type=raw,value=${{inputs.extra_tags}}
+          
     - name: "Select platforms"
       id: multi-platform
       shell: bash
@@ -130,6 +131,9 @@ runs:
         tags: ${{ steps.metadata.outputs.tags }}
         labels: ${{ steps.metadata.outputs.labels }}
         build-args: ${{ inputs.build_args }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
         secrets: ${{ inputs.build_secrets }}
         cache-from: ${{ inputs.cache_from }}
         cache-to: ${{ inputs.cache_to }}
