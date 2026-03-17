@@ -42,10 +42,10 @@ inputs:
     default: "."
   cache_from:
     description: "cache-from sent to docker/build-push-action"
-    required: false
+    default: "type=gha"
   cache_to:
     description: "cache-to sent to docker/build-push-action"
-    required: false
+    default: "type=gha,mode=max"
   target:
     description: "docker target"
     required: false
@@ -132,8 +132,8 @@ runs:
         labels: ${{ steps.metadata.outputs.labels }}
         build-args: ${{ inputs.build_args }}
         secrets: ${{ inputs.build_secrets }}
-        cache-from: ${{ inputs.cache_from || 'type=gha' }}
-        cache-to: ${{ inputs.cache_to || 'type=gha,mode=max' }}
+        cache-from: ${{ inputs.cache_from }}
+        cache-to: ${{ inputs.cache_to }}
         target: ${{ inputs.target }}
     - name: Write summary
       shell: bash
