@@ -1,0 +1,134 @@
+name: Test action
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+jobs:
+  push-false:
+    name: push=false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Run action with push=false
+        id: run-action
+        uses: ./. 
+        with:
+          name: platform-build-push-sign-test
+          context: ./.github/testdata/app
+          dockerfile: ./.github/testdata/app/Dockerfile
+          push: "false"
+      - name: Assert tag-only image output
+        shell: bash
+        env:
+          IMAGE: ${{ steps.run-action.outputs.image }}
+          DIGEST: ${{ steps.run-action.outputs.digest }}
+        run: |
+          set -euo pipefail
+          [[ -n "$IMAGE" ]]
+          [[ "$IMAGE" != *"@sha256:"* ]]
+          [[ -z "$DIGEST" ]]
+
+  push-true:
+    name: push=true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Run action with push=true
+        id: run-action
+        uses: ./. 
+        with:
+          name: platform-build-push-sign-test
+          context: ./.github/testdata/app
+          dockerfile: ./.github/testdata/app/Dockerfile
+          push: "true"
+          google_service_account: gh-deploy
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+      - name: Assert canonical image output
+        shell: bash
+        env:
+          IMAGE: ${{ steps.run-action.outputs.image }}
+          DIGEST: ${{ steps.run-action.outputs.digest }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE" == *"@sha256:"* ]]
+          [[ "$DIGEST" == sha256:* ]]
+
+  push-ghcr:
+    name: push=true + push_ghcr=true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Run action with push=true and push_ghcr=true
+        id: run-action
+        uses: ./.
+        with:
+          name: platform-build-push-sign-test-ghcr
+          context: ./.github/testdata/app
+          dockerfile: ./.github/testdata/app/Dockerfile
+          push: "true"
+          push_ghcr: "true"
+          google_service_account: gh-deploy
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+      - name: Assert digest output for GAR and GHCR push
+        shell: bash
+        env:
+          IMAGE: ${{ steps.run-action.outputs.image }}
+          DIGEST: ${{ steps.run-action.outputs.digest }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE" == *"@sha256:"* ]]
+          [[ "$DIGEST" == sha256:* ]]
+
+  invalid-context:
+    name: invalid context
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Run action with invalid context
+        id: run-action
+        continue-on-error: true
+        uses: ./. 
+        with:
+          name: platform-build-push-sign-test
+          context: ./.github/testdata/missing
+          dockerfile: ./.github/testdata/app/Dockerfile
+          push: "false"
+      - name: Assert failure
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.run-action.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$OUTCOME" == "failure" ]]
+
+  invalid-dockerfile:
+    name: invalid dockerfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Run action with invalid dockerfile
+        id: run-action
+        continue-on-error: true
+        uses: ./. 
+        with:
+          name: platform-build-push-sign-test
+          context: ./.github/testdata/app
+          dockerfile: ./.github/testdata/app/MissingDockerfile
+          push: "false"
+      - name: Assert failure
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.run-action.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$OUTCOME" == "failure" ]]
