@@ -52,16 +52,16 @@ inputs:
 outputs:
   tag:
     description: "full image tag"
-    value: ${{ steps.set-outputs.outputs.tag }}
+    value: ${{ steps.set_outputs.outputs.tag }}
   version:
     description: "version"
-    value: ${{ steps.set-outputs.outputs.version }}
+    value: ${{ steps.set_outputs.outputs.version }}
   image:
     description: "Canonical image reference"
-    value: ${{ steps.set-outputs.outputs.image }}
+    value: ${{ steps.set_outputs.outputs.image }}
   digest:
     description: "Image digest"
-    value: ${{ steps.set-outputs.outputs.digest }}
+    value: ${{ steps.set_outputs.outputs.digest }}
 runs:
   using: "composite"
   steps:
@@ -129,14 +129,14 @@ runs:
           type=raw,value=${{inputs.extra_tags}}
 
     - name: "Select platforms"
-      id: multi-platform
+      id: multi_platform
       shell: bash
       run: |
         write_output() {
           local name="$1"
           local value="$2"
           local delimiter
-          delimiter="EOF_$(uuidgen)"
+          delimiter="EOF_$(python3 -c 'import uuid; print(uuid.uuid4())')"
           {
             echo "$name<<$delimiter"
             printf '%s\n' "$value"
@@ -154,7 +154,7 @@ runs:
       uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # ratchet:docker/build-push-action@v7
       with:
         context: "${{ inputs.context }}"
-        platforms: "${{ steps.multi-platform.outputs.platforms }}"
+        platforms: "${{ steps.multi_platform.outputs.platforms }}"
         file: "${{ inputs.dockerfile }}"
         push: ${{ inputs.push }}
         tags: ${{ steps.metadata.outputs.tags }}
@@ -165,10 +165,10 @@ runs:
         cache-to: ${{ inputs.cache_to }}
         target: ${{ inputs.target }}
     - name: Build canonical image ref
-      id: image-ref
+      id: image_ref
       shell: bash
       env:
-        TAG: ${{ fromJSON(steps.metadata.outputs.json).tags[0] }}
+        IMAGE_TAGS: ${{ steps.metadata.outputs.tags }}
         IMAGE_DIGEST: ${{ steps.build_push.outputs.digest }}
         PUSH_IMAGE: ${{ inputs.push }}
         PUSH_GHCR: ${{ inputs.push_ghcr }}
@@ -179,7 +179,7 @@ runs:
           local name="$1"
           local value="$2"
           local delimiter
-          delimiter="EOF_$(uuidgen)"
+          delimiter="EOF_$(python3 -c 'import uuid; print(uuid.uuid4())')"
           {
             echo "$name<<$delimiter"
             printf '%s\n' "$value"
@@ -187,11 +187,11 @@ runs:
           } >> "$GITHUB_OUTPUT"
         }
 
-        image="$TAG"
+        image="${IMAGE_TAGS%%$'\n'*}"
         digest="${IMAGE_DIGEST#@}"
 
         if [ -z "$image" ]; then
-          echo "::error ::Failed to resolve image tag from docker metadata JSON output. Expected steps.metadata.outputs.json.tags[0] to contain a tag."
+          echo "::error ::Failed to resolve image tag from docker metadata output. Expected steps.metadata.outputs.tags to contain at least one image tag."
           exit 1
         fi
 
@@ -211,6 +211,7 @@ runs:
           image_ref="$image@$digest"
         fi
 
+        write_output "tag" "$image"
         write_output "image" "$image_ref"
     - name: Write summary
       shell: bash
@@ -221,7 +222,7 @@ runs:
       if: ${{ inputs.push == 'true' }}
       uses: nais/attest-sign@v2 # ratchet:exclude
       with:
-        image_ref: ${{ steps.image-ref.outputs.image }}
+        image_ref: ${{ steps.image_ref.outputs.image }}
         sbom: ${{ inputs.sbom }}
     - name: "Generate SBOM, attest and sign image (GHCR)"
       if: ${{ inputs.push_ghcr == 'true' }}
@@ -230,12 +231,12 @@ runs:
         image_ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         sbom: ${{ inputs.sbom }}
     - name: "Set outputs"
-      id: set-outputs
+      id: set_outputs
       shell: bash
       env:
-        TAG: ${{ fromJSON(steps.metadata.outputs.json).tags[0] }}
-        VERSION: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}
-        IMAGE: ${{ steps.image-ref.outputs.image }}
+        TAG: ${{ steps.image_ref.outputs.tag }}
+        VERSION: ${{ steps.metadata.outputs.version }}
+        IMAGE: ${{ steps.image_ref.outputs.image }}
         DIGEST: ${{ steps.build_push.outputs.digest }}
       run: |
         set -euo pipefail
@@ -244,13 +245,18 @@ runs:
           local name="$1"
           local value="$2"
           local delimiter
-          delimiter="EOF_$(uuidgen)"
+          delimiter="EOF_$(python3 -c 'import uuid; print(uuid.uuid4())')"
           {
             echo "$name<<$delimiter"
             printf '%s\n' "$value"
             echo "$delimiter"
           } >> "$GITHUB_OUTPUT"
         }
+
+        if [ -z "$VERSION" ]; then
+          echo "::error ::Failed to resolve image version from docker metadata output. Expected steps.metadata.outputs.version to be set."
+          exit 1
+        fi
 
         write_output "tag" "$TAG"
         write_output "version" "$VERSION"

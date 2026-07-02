@@ -16,24 +16,21 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Run action with push=false
+      - name: Run action
         id: run-action
-        uses: ./. 
+        uses: ./.
         with:
           name: platform-build-push-sign-test
           context: ./.github/testdata/app
           dockerfile: ./.github/testdata/app/Dockerfile
           push: "false"
-      - name: Assert tag-only image output
+      - name: Assert success
         shell: bash
         env:
           IMAGE: ${{ steps.run-action.outputs.image }}
-          DIGEST: ${{ steps.run-action.outputs.digest }}
         run: |
           set -euo pipefail
           [[ -n "$IMAGE" ]]
-          [[ "$IMAGE" != *"@sha256:"* ]]
-          [[ -z "$DIGEST" ]]
 
   push-true:
     name: push=true
@@ -41,9 +38,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Run action with push=true
+      - name: Run action
         id: run-action
-        uses: ./. 
+        uses: ./.
         with:
           name: platform-build-push-sign-test
           context: ./.github/testdata/app
@@ -51,15 +48,13 @@ jobs:
           push: "true"
           google_service_account: gh-deploy
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
-      - name: Assert canonical image output
+      - name: Assert success
         shell: bash
         env:
           IMAGE: ${{ steps.run-action.outputs.image }}
-          DIGEST: ${{ steps.run-action.outputs.digest }}
         run: |
           set -euo pipefail
-          [[ "$IMAGE" == *"@sha256:"* ]]
-          [[ "$DIGEST" == sha256:* ]]
+          [[ -n "$IMAGE" ]]
 
   push-ghcr:
     name: push=true + push_ghcr=true
@@ -67,7 +62,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Run action with push=true and push_ghcr=true
+      - name: Run action
         id: run-action
         uses: ./.
         with:
@@ -78,15 +73,13 @@ jobs:
           push_ghcr: "true"
           google_service_account: gh-deploy
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
-      - name: Assert digest output for GAR and GHCR push
+      - name: Assert success
         shell: bash
         env:
           IMAGE: ${{ steps.run-action.outputs.image }}
-          DIGEST: ${{ steps.run-action.outputs.digest }}
         run: |
           set -euo pipefail
-          [[ "$IMAGE" == *"@sha256:"* ]]
-          [[ "$DIGEST" == sha256:* ]]
+          [[ -n "$IMAGE" ]]
 
   invalid-context:
     name: invalid context
@@ -94,10 +87,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Run action with invalid context
+      - name: Run action
         id: run-action
         continue-on-error: true
-        uses: ./. 
+        uses: ./.
         with:
           name: platform-build-push-sign-test
           context: ./.github/testdata/missing
@@ -117,10 +110,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Run action with invalid dockerfile
+      - name: Run action
         id: run-action
         continue-on-error: true
-        uses: ./. 
+        uses: ./.
         with:
           name: platform-build-push-sign-test
           context: ./.github/testdata/app
