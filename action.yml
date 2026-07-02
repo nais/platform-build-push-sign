@@ -132,22 +132,10 @@ runs:
       id: multi_platform
       shell: bash
       run: |
-        write_output() {
-          local name="$1"
-          local value="$2"
-          local delimiter
-          delimiter="EOF_$(python3 -c 'import uuid; print(uuid.uuid4())')"
-          {
-            echo "$name<<$delimiter"
-            printf '%s\n' "$value"
-            echo "$delimiter"
-          } >> "$GITHUB_OUTPUT"
-        }
-
         if [[ "${{ inputs.multi-platform }}" == 'true' ]]; then
-          write_output "platforms" "linux/amd64,linux/arm64"
+          echo "platforms=linux/amd64,linux/arm64" >> "$GITHUB_OUTPUT"
         else
-          write_output "platforms" "linux/amd64"
+          echo "platforms=linux/amd64" >> "$GITHUB_OUTPUT"
         fi
     - name: "Build and push"
       id: "build_push"
@@ -175,18 +163,6 @@ runs:
       run: |
         set -euo pipefail
 
-        write_output() {
-          local name="$1"
-          local value="$2"
-          local delimiter
-          delimiter="EOF_$(python3 -c 'import uuid; print(uuid.uuid4())')"
-          {
-            echo "$name<<$delimiter"
-            printf '%s\n' "$value"
-            echo "$delimiter"
-          } >> "$GITHUB_OUTPUT"
-        }
-
         image="${IMAGE_TAGS%%$'\n'*}"
         digest="${IMAGE_DIGEST#@}"
 
@@ -211,8 +187,8 @@ runs:
           image_ref="$image@$digest"
         fi
 
-        write_output "tag" "$image"
-        write_output "image" "$image_ref"
+        echo "tag=$image" >> "$GITHUB_OUTPUT"
+        echo "image=$image_ref" >> "$GITHUB_OUTPUT"
     - name: Write summary
       shell: bash
       run: |
@@ -241,24 +217,12 @@ runs:
       run: |
         set -euo pipefail
 
-        write_output() {
-          local name="$1"
-          local value="$2"
-          local delimiter
-          delimiter="EOF_$(python3 -c 'import uuid; print(uuid.uuid4())')"
-          {
-            echo "$name<<$delimiter"
-            printf '%s\n' "$value"
-            echo "$delimiter"
-          } >> "$GITHUB_OUTPUT"
-        }
-
         if [ -z "$VERSION" ]; then
           echo "::error ::Failed to resolve image version from docker metadata output. Expected steps.metadata.outputs.version to be set."
           exit 1
         fi
 
-        write_output "tag" "$TAG"
-        write_output "version" "$VERSION"
-        write_output "image" "$IMAGE"
-        write_output "digest" "$DIGEST"
+        echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+        echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
