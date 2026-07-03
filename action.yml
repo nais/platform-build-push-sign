@@ -31,6 +31,10 @@ inputs:
   sbom:
     description: "existing SBOM in cyclonedx format"
     default: "auto-generate-for-me-please.json"
+  additional_sboms:
+    description: "Newline-separated list of extra CycloneDX SBOM files to merge with the primary SBOM"
+    required: false
+    default: ""
   extra_tags:
     description: "A list of tags to be applied in addition to the detailed time+sha-tag and latest-tag"
     default: ""
@@ -200,12 +204,14 @@ runs:
       with:
         image_ref: ${{ steps.image_ref.outputs.image }}
         sbom: ${{ inputs.sbom }}
+        additional_sboms: ${{ inputs.additional_sboms }}
     - name: "Generate SBOM, attest and sign image (GHCR)"
       if: ${{ inputs.push_ghcr == 'true' }}
       uses: nais/attest-sign@v2 # ratchet:exclude
       with:
         image_ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         sbom: ${{ inputs.sbom }}
+        additional_sboms: ${{ inputs.additional_sboms }}
     - name: "Set outputs"
       id: set_outputs
       shell: bash

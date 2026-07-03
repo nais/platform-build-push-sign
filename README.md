@@ -53,6 +53,8 @@ Commonly used inputs:
 - `push_ghcr`: also push/sign in GHCR, default `false`
 - `multi-platform`: build `linux/amd64,linux/arm64`, default `false`
 - `extra_tags`: additional tags
+- `sbom`: primary CycloneDX SBOM file
+- `additional_sboms`: newline-separated extra CycloneDX SBOM files to merge
 - `build_args`: build args passed to Docker
 - `build_secrets`: build secrets passed to Docker
 - `target`: Docker target stage
@@ -69,4 +71,3 @@ They can be retrieved with `${{ steps.build-push-sign.outputs.<name> }}`.
 `image` is the canonical image reference. When available, it includes both the readable tag and immutable digest (ex. `europe-north1-docker.pkg.dev/nais-io/nais/images/smsmanager:2023-09-20-160128-1ededf3@sha256:abc123...`).
 
 `digest` is the image digest from the build step (ex. `sha256:abc123...`).
-
