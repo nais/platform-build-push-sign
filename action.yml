@@ -31,6 +31,10 @@ inputs:
   sbom:
     description: "existing SBOM in cyclonedx format"
     default: "auto-generate-for-me-please.json"
+  additional_sboms:
+    description: "Newline-separated list of extra CycloneDX SBOM files to merge with the primary SBOM"
+    required: false
+    default: ""
   extra_tags:
     description: "A list of tags to be applied in addition to the detailed time+sha-tag and latest-tag"
     default: ""
@@ -52,16 +56,33 @@ inputs:
 outputs:
   tag:
     description: "full image tag"
-    value: ${{ steps.outputs.outputs.tag }}
+    value: ${{ steps.set_outputs.outputs.tag }}
   version:
     description: "version"
-    value: ${{ steps.outputs.outputs.version }}
+    value: ${{ steps.set_outputs.outputs.version }}
+  image:
+    description: "Canonical image reference"
+    value: ${{ steps.set_outputs.outputs.image }}
+  digest:
+    description: "Image digest"
+    value: ${{ steps.set_outputs.outputs.digest }}
 runs:
   using: "composite"
   steps:
     - name: Check inputs
       shell: bash
       run: |
+        if [ ! -d "${{ inputs.context }}" ]; then
+          echo "::error ::Docker context not found: ${{ inputs.context }}."
+          exit 1
+        fi
+
+        dockerfile="${{ inputs.dockerfile }}"
+        if [ ! -f "$dockerfile" ]; then
+          echo "::error ::Dockerfile not found: $dockerfile. Check the dockerfile input and context path."
+          exit 1
+        fi
+
         if [[ "${{ inputs.push }}" == "true" ]]; then
           if [[ "${{ inputs.workload_identity_provider }}" == "" ]]; then
             echo "Input workload_identity_provider is required when push is set to true."
@@ -112,20 +133,20 @@ runs:
           type=raw,value=${{inputs.extra_tags}}
 
     - name: "Select platforms"
-      id: multi-platform
+      id: multi_platform
       shell: bash
       run: |
         if [[ "${{ inputs.multi-platform }}" == 'true' ]]; then
-          echo "platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
+          echo "platforms=linux/amd64,linux/arm64" >> "$GITHUB_OUTPUT"
         else
-          echo "platforms=linux/amd64" >> $GITHUB_OUTPUT
+          echo "platforms=linux/amd64" >> "$GITHUB_OUTPUT"
         fi
     - name: "Build and push"
       id: "build_push"
       uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # ratchet:docker/build-push-action@v7
       with:
         context: "${{ inputs.context }}"
-        platforms: "${{ steps.multi-platform.outputs.platforms }}"
+        platforms: "${{ steps.multi_platform.outputs.platforms }}"
         file: "${{ inputs.dockerfile }}"
         push: ${{ inputs.push }}
         tags: ${{ steps.metadata.outputs.tags }}
@@ -135,6 +156,43 @@ runs:
         cache-from: ${{ inputs.cache_from }}
         cache-to: ${{ inputs.cache_to }}
         target: ${{ inputs.target }}
+    - name: Build canonical image ref
+      id: image_ref
+      shell: bash
+      env:
+        IMAGE_TAGS: ${{ steps.metadata.outputs.tags }}
+        IMAGE_DIGEST: ${{ steps.build_push.outputs.digest }}
+        PUSH_IMAGE: ${{ inputs.push }}
+        PUSH_GHCR: ${{ inputs.push_ghcr }}
+      run: |
+        set -euo pipefail
+
+        image="${IMAGE_TAGS%%$'\n'*}"
+        digest="${IMAGE_DIGEST#@}"
+
+        if [ -z "$image" ]; then
+          echo "::error ::Failed to resolve image tag from docker metadata output. Expected steps.metadata.outputs.tags to contain at least one image tag."
+          exit 1
+        fi
+
+        if [[ "$image" == *"@"* ]] && [ -n "$digest" ]; then
+          echo "::error ::Image tag must not include a digest when digest is provided separately."
+          exit 1
+        fi
+
+        if { [ "$PUSH_IMAGE" = 'true' ] || [ "$PUSH_GHCR" = 'true' ]; } && [ -z "$digest" ]; then
+          echo "::error ::Failed to resolve image digest from docker build output. Digest is required when pushing and signing an image."
+          exit 1
+        fi
+
+        image_ref="$image"
+
+        if [ "$PUSH_IMAGE" = 'true' ] && [ -n "$digest" ]; then
+          image_ref="$image@$digest"
+        fi
+
+        echo "tag=$image" >> "$GITHUB_OUTPUT"
+        echo "image=$image_ref" >> "$GITHUB_OUTPUT"
     - name: Write summary
       shell: bash
       run: |
@@ -144,17 +202,33 @@ runs:
       if: ${{ inputs.push == 'true' }}
       uses: nais/attest-sign@v2 # ratchet:exclude
       with:
-        image_ref: ${{ inputs.registry }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
+        image_ref: ${{ steps.image_ref.outputs.image }}
         sbom: ${{ inputs.sbom }}
+        additional_sboms: ${{ inputs.additional_sboms }}
     - name: "Generate SBOM, attest and sign image (GHCR)"
       if: ${{ inputs.push_ghcr == 'true' }}
       uses: nais/attest-sign@v2 # ratchet:exclude
       with:
         image_ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.name }}@${{ steps.build_push.outputs.digest }}
         sbom: ${{ inputs.sbom }}
+        additional_sboms: ${{ inputs.additional_sboms }}
     - name: "Set outputs"
-      id: outputs
+      id: set_outputs
       shell: bash
+      env:
+        TAG: ${{ steps.image_ref.outputs.tag }}
+        VERSION: ${{ steps.metadata.outputs.version }}
+        IMAGE: ${{ steps.image_ref.outputs.image }}
+        DIGEST: ${{ steps.build_push.outputs.digest }}
       run: |
-        echo "tag=${{ fromJSON(steps.metadata.outputs.json).tags[0] }}" >> $GITHUB_OUTPUT
-        echo "version=${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}" >> $GITHUB_OUTPUT
+        set -euo pipefail
+
+        if [ -z "$VERSION" ]; then
+          echo "::error ::Failed to resolve image version from docker metadata output. Expected steps.metadata.outputs.version to be set."
+          exit 1
+        fi
+
+        echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+        echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
